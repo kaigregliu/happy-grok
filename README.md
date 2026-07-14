@@ -8,6 +8,9 @@ It is designed for AI coding-agent incidents such as broad repository upload,
 trace upload, or accidental secret exposure. It does not upload anything, and
 findings are redacted by default.
 
+`happy-grok` is an independent community tool and is not affiliated with,
+endorsed by, or sponsored by xAI.
+
 ## Disclaimer
 
 `happy-grok` is an early-stage tool and has not been thoroughly tested across
@@ -40,6 +43,8 @@ Launchers:
 - Sensitive file names in the working tree, tracked files, and Git history.
 - Grok Build usage signals such as a `grok` binary on `PATH`, `.grok`
   directories, and repository-level agent instructions.
+
+For the intended behavior and current boundaries, see [SPEC.md](SPEC.md).
 
 ## What it cannot prove
 

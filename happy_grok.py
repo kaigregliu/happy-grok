@@ -372,33 +372,38 @@ def scan_git_history(root: Path, show: bool, max_findings: int) -> list[Finding]
     findings: list[Finding] = []
     cmd = ["git", "-C", str(root), "log", "--all", "--full-history", "-p", "--no-ext-diff", "--no-renames", "--"]
     try:
-        proc = subprocess.Popen(cmd, cwd=str(root), text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(cmd, cwd=str(root), text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     except OSError:
         return findings
     commit = ""
     current_file = ""
     if not proc.stdout:
         return findings
-    for raw_line in proc.stdout:
-        line = raw_line.rstrip("\n")
-        if line.startswith("commit "):
-            commit = line.split(" ", 1)[1][:12]
-            continue
-        if line.startswith("+++ b/"):
-            current_file = line[6:]
-            continue
-        if line.startswith("--- a/") or line.startswith("+++") or line.startswith("---"):
-            continue
-        if not line.startswith(("+", "-")):
-            continue
-        payload = line[1:]
-        location = f"{commit}:{current_file or '<patch>'}"
-        new_findings = scan_text(payload, location, None, show)
-        findings.extend(new_findings)
-        if len(findings) >= max_findings:
-            proc.kill()
-            return findings[:max_findings]
-    proc.wait()
+    try:
+        for raw_line in proc.stdout:
+            line = raw_line.rstrip("\n")
+            if line.startswith("commit "):
+                commit = line.split(" ", 1)[1][:12]
+                continue
+            if line.startswith("+++ b/"):
+                current_file = line[6:]
+                continue
+            if line.startswith("--- a/") or line.startswith("+++") or line.startswith("---"):
+                continue
+            if not line.startswith(("+", "-")):
+                continue
+            payload = line[1:]
+            location = f"{commit}:{current_file or '<patch>'}"
+            new_findings = scan_text(payload, location, None, show)
+            findings.extend(new_findings)
+            if len(findings) >= max_findings:
+                proc.kill()
+                proc.wait()
+                return findings[:max_findings]
+    finally:
+        proc.stdout.close()
+        if proc.poll() is None:
+            proc.wait()
     return findings
 
 
